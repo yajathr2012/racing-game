@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Racing Game</title>
+
+<style>
+body{
+    margin:0;
+    background:#111;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    font-family:Arial,sans-serif;
+    color:white;
+}
+
+#game{
+    width:400px;
+    height:700px;
+    background:#444;
+    position:relative;
+    overflow:hidden;
+    border:4px solid white;
+}
+
+.line{
+    position:absolute;
+    width:10px;
+    height:100px;
+    background:white;
+    left:195px;
+}
+
+#player{
+    position:absolute;
+    width:50px;
+    height:90px;
+    background:red;
+    bottom:20px;
+    left:175px;
+    border-radius:10px;
+}
+
+.enemy{
+    position:absolute;
+    width:50px;
+    height:90px;
+    background:yellow;
+    border-radius:10px;
+}
+
+#score{
+    position:absolute;
+    top:10px;
+    left:10px;
+    font-size:24px;
+    z-index:10;
+}
+
+#gameOver{
+    display:none;
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    text-align:center;
+    background:rgba(0,0,0,0.9);
+    padding:20px;
+    border-radius:10px;
+}
+button{
+    padding:10px 20px;
+    cursor:pointer;
+    font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<div id="score">Score: 0</div>
+
+<div id="player"></div>
+
+<div id="gameOver">
+<h2>Game Over</h2>
+<p id="finalScore"></p>
+<button onclick="location.reload()">Restart</button>
+</div>
+
+</div>
+
+<script>
+const game = document.getElementById("game");
+const player = document.getElementById("player");
+const scoreText = document.getElementById("score");
+const gameOverBox = document.getElementById("gameOver");
+const finalScore = document.getElementById("finalScore");
+
+let playerX = 175;
+let score = 0;
+let running = true;
+
+for(let i=0;i<6;i++){
+    const line=document.createElement("div");
+    line.classList.add("line");
+    line.style.top=(i*120)+"px";
+    game.appendChild(line);
+}
+
+const enemies=[];
+
+function createEnemy(){
+    const enemy=document.createElement("div");
+    enemy.classList.add("enemy");
+
+    const lanes=[50,175,300];
+    enemy.style.left=lanes[Math.floor(Math.random()*3)]+"px";
+    enemy.style.top="-100px";
+
+    game.appendChild(enemy);
+    enemies.push(enemy);
+}
+
+createEnemy();
+
+document.addEventListener("keydown",e=>{
+    if(!running) return;
+
+    if(e.key==="ArrowLeft"){
+        playerX-=25;
+    }
+
+    if(e.key==="ArrowRight"){
+        playerX+=25;
+    }
+
+    playerX=Math.max(0,Math.min(350,playerX));
+    player.style.left=playerX+"px";
+});
+
+function crash(a,b){
+    return !(
+        a.bottom < b.top ||
+        a.top > b.bottom ||
+        a.right < b.left ||
+        a.left > b.right
+    );
+}
+
+function update(){
+
+    if(!running) return;
+
+    document.querySelectorAll(".line").forEach(line=>{
+        let y=parseInt(line.style.top||0);
+        y+=8;
+
+        if(y>700) y=-100;
+
+        line.style.top=y+"px";
+    });
+
+    enemies.forEach((enemy,index)=>{
+
+        let y=parseInt(enemy.style.top);
+        y+=6;
+
+        enemy.style.top=y+"px";
+
+        if(y>700){
+            enemy.remove();
+            enemies.splice(index,1);
+            createEnemy();
+
+            score++;
+            scoreText.textContent="Score: "+score;
+        }
+
+        const playerRect=player.getBoundingClientRect();
+        const enemyRect=enemy.getBoundingClientRect();
+
+        if(crash(playerRect,enemyRect)){
+            running=false;
+
+            finalScore.textContent=
+                "Your Score: "+score;
+
+            gameOverBox.style.display="block";
+        }
+    });
+
+    if(enemies.length<3 && Math.random()<0.02){
+        createEnemy();
+    }
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
